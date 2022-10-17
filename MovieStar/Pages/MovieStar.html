@@ -1,0 +1,227 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>MoviesStar DB</title>
+    <!--jquery import-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+            integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+            crossorigin="anonymous">
+    </script>
+
+    <!--bootstrap import-->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!--ajaxCalls import-->
+    <script src="../Scripts/AjexCalls.js"></script>
+    <style>
+        body {
+            font-family: 'Trebuchet MS';
+            background-color: #1E90FF;
+            text-align: center
+        }
+        img {
+            width: 200px;
+            margin: 20px;
+            border-radius: 3px;
+        }
+        #header {
+            font-size: 25px;
+            text-align: center;
+        }
+        p {
+            font-size: 25px;
+        }
+        button {
+            border-radius: 3px;
+            border: 2px solid #5F9EA0;
+            background-color: #1c1521;
+            color: #5F9EA0;
+            font-size: 25px;
+        }
+            button:hover {
+                background-color: #483D8B;
+            }
+        #movieName {
+            background-color: azure;
+            border-radius: 3px;
+            border: 2px solid #FFFFF0;
+            color: black;
+        }
+        #head {
+            color: #F5F5DC;
+        }
+        .panel {
+            width: 450px;
+            text-align: center;
+            margin: 20px;
+            border: 2px solid #FFFFF0;
+            border-radius: 10px;
+            display: inline-block;
+            color: #F5F5DC;
+        }
+    </style>
+    <script>
+        //set PATH as a global variable
+        var PATH = "https://image.tmdb.org/t/p/original";
+        //global variable that catches the index of the panel that the "details" button has been pressed
+        var INDEX;
+        $(document).ready(function () {
+            $("#getMovie").click(getMovie);
+        });
+        function getMovie()
+        {
+            let name = $("#movieName").val();
+            let key = "e33384640d5142d997aacea4e1f645b0";
+            let apiCall = `https://api.themoviedb.org/3/search/movie?api_key=${key}&query=${name}`;
+            ajaxCall("GET", apiCall, "", getMovieSuccessCB, getMovieErrorCB);
+        }
+        function getMovieSuccessCB(movies)
+        {
+            //reset the page
+            $("#ph").html("");
+
+            movies = movies.results;
+            for (var i = 0; i < movies.length; i++)
+            {
+                //create a panal including head and body
+                let panel = document.createElement("div");
+                panel.setAttribute("id", "panel" + i);//set unique id to movie panel
+                let panelhead = document.createElement("div");
+                let panelbody = document.createElement("div");
+                panelbody.setAttribute("id", "movie" + i);//set unique id to each body panel
+                panel.setAttribute("class", "panel panel-primary");
+                panelhead.setAttribute("class", "panel-heading");
+                panelbody.setAttribute("class", "panel-body");
+
+                //import the necessary details ,create children elements for display
+                //and appending them the the parent panel element
+                let title = document.createElement("H3");
+                title.innerHTML = movies[i].title;
+                panelhead.appendChild(title);
+                let img = document.createElement("img");
+                img.setAttribute("src", PATH + movies[i].poster_path);
+                panelhead.appendChild(img);
+                //create 'details button' for each movie
+                let btn = document.createElement("button");
+                btn.innerHTML = "details";
+                btn.setAttribute("onclick", "getDetails(" + movies[i].id + "," + i + ")");
+                panelbody.appendChild(btn);
+                //append 
+                panel.appendChild(panelhead);
+                panel.appendChild(panelbody);
+                $("#ph").append(panel);
+            }
+            
+
+        }
+
+        function getMovieErrorCB(err) {
+            console.log(err);
+        }
+        function getDetails(movieid, index) {
+            //set the necessary index to the "INDEX" global var
+            INDEX = index;
+            let id = movieid;
+            let key = "6a6ed639cac67afbc17930d48d59b8cb";
+            let apiCall = `https://api.themoviedb.org/3/movie/${id}?api_key=${key}`;
+            ajaxCall("GET", apiCall, "", getDetailsSuccessCB, getMovieErrorCB);
+        }
+        function getDetailsSuccessCB(movie) {
+
+            //get the desired panel body for edit by importing the index from "INDEX" dlobal var
+            let index = INDEX;
+            let panel = document.getElementById("panel" + index);
+            panel.style.width = "500px";
+            panel.style.justifyContent = "center";
+            let bodypanel = document.getElementById("movie" + index);
+            bodypanel.innerHTML = "";
+            $("#ph").html("").append(panel)//.hide();
+
+            //append overview
+            let overview = document.createElement("p");
+            overview.innerHTML = "overview: " + movie.overview;
+            bodypanel.appendChild(overview);
+
+            //append geners
+            let genres = document.createElement("p");
+            genres.innerHTML = "geners: ";
+            for (var i = 0; i < movie.genres.length; i++) {
+                genres.innerHTML += movie.genres[i].name;
+                if (i < movie.genres.length) {
+                    genres.innerHTML += ", ";
+                }
+            }
+            bodypanel.appendChild(genres);
+
+            //append release date
+            let release_date = document.createElement("p");
+            release_date.innerHTML = "release date: " + movie.release_date;
+            bodypanel.appendChild(release_date);
+
+            //append vote average
+            let vote_average = document.createElement("p");
+            vote_average.innerHTML = "vote average: " + movie.vote_average;
+            bodypanel.appendChild(vote_average);
+
+            //create the "ADD" buttton for post the desired movie to the server
+            let btn = document.createElement("button");
+            btn.innerHTML = "ADD";
+            btn.setAttribute("onclick", "insertMovie(" + JSON.stringify(movie) + ")");
+            bodypanel.appendChild(btn);
+
+          
+        }
+
+        //insert to server
+        function insertMovie(movie) {
+
+            //generate list of strings to movieGeners
+            let movieGeners = [];
+            for (var i = 0; i < movie.genres.length; i++) {
+                movieGeners.push(movie.genres[i].name);
+            }
+
+            //movie ocbect with the desired fields to store in the server
+            //the comments next to the fields represent the data types that will be used
+            let m = {
+                movieID: movie.id,//ulong
+                title: movie.title,//String
+                overview: movie.overview,//String
+                geners: movieGeners,//List<String>
+                releaseDate: movie.release_date,//DateTime
+                posterLink: PATH + movie.poster_path,//String
+                avgScore: movie.vote_average//double
+            }
+
+            //ajax call
+            let api = "../api/Movies";
+            ajaxCall("POST", api, JSON.stringify(m), insertSCB, insertECB);
+        }
+
+        function insertSCB(status) {
+            console.log(status+" "+"add a movie");
+        }
+
+        function insertECB(err) {
+            console.log(err);
+        }
+
+
+    </script>
+</head>
+<body>
+    <div id="header">
+        <H1 id="head">MoviesStar DB</H1>
+        <input type="text" id="movieName" />
+        <button id="getMovie">Get Movie</button>
+    </div>
+    <hr />
+    <div id="ph"></div>
+</body>
+</html>
